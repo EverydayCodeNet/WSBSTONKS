@@ -13,8 +13,6 @@
 #include <graphx.h>
 #include <fileioc.h>
 
-
-
 kb_key_t key;
 
 typedef struct {
@@ -46,8 +44,7 @@ typedef struct {
     uint8_t volatility, tempshares;
     int average;
     unsigned int shares;
-    //percent change
-    //increase in price + initial / initial
+
     int percentchange;
 } stock_t;
 stock_t stocks[5];
@@ -145,7 +142,6 @@ void loadPrices() {
         }
 
         stock->close = stock->initialprice;
-        //phase out prev and current price
         stock->prevprice = stock->initialprice;
         stock->currentprice = stock->initialprice;
         
@@ -169,8 +165,6 @@ void updatePrices() {
         if (stock->close > stock->open) {
             stock->high = stock->close + (stock->close / 3);
             stock->low = stock->open - (stock->open / 3);
-            //stock->high = stock->close + randInt(0,stock->volatility) / 3;
-           // stock->low = stock->open - randInt(0,stock->volatility) / 3;
         } else {
             stock->high = stock->open + (stock->open / 3);
             stock->low = stock->close - (stock->close / 3);
@@ -190,16 +184,13 @@ void updatePrices() {
 void viewPortfolio() {
     int numLoops = 0;
     uint8_t day = 0;
-    bool canQuit,promptEnd = 0;
-    bool trade = false;
-    //updatePrices();
-    //gfx_SetDrawScreen();
+    bool canQuit,promptEnd, trade = 0;
+
     gfx_ZeroScreen();
     WhiText();
     gfx_SetTextScale(2,2);
     gfx_PrintStringXY("Investing",20,20);
     gfx_PrintStringXY("$",20,50);
-    //or initial value
     
     gfx_PrintInt(player.value,1);
 
@@ -213,16 +204,6 @@ void viewPortfolio() {
     RedText();
     gfx_PrintStringXY("Sell: -",278, 222);
 
-    
-    //if stock value drops by big percentage?
-    /*gfx_SetColor(192);
-    gfx_FillRectangle(0,195,210,15);
-    gfx_FillTriangle(
-        210,195,
-        210,210,
-        220,210
-    );*/
-
     gfx_SetColor(255);
     gfx_HorizLine(0,210,320);
     gfx_VertLine(270,210,30);
@@ -235,35 +216,13 @@ void viewPortfolio() {
             player.day++;
             day++;
             updatePrices();
-            //temporary check if player is invested - might need to go through for loop
-            /*if (player.buyingpower != 1000) {
-                gfx_SetColor(255);
-                //- height / 2 - high low
-                
-                gfx_VertLine(5 + 10*day + 2, 160 - (-player.high + player.low / player.scl) / 2, (player.high - player.low) * 2 / player.scl);
-                //works is just ugly
-                //gfx_VertLine((5 + 10*day) + 2, 160 - ((player.value + (player.high - player.low) / 2) / player.scl) ,(player.high - player.low) * 2 / player.scl);
-                if (player.value >= player.prevvalue) {
-                    gfx_SetColor(14);
-                    gfx_FillRectangle(5 + 10*day,160 - (player.value / player.scl),5,(player.value - player.prevvalue)/5);
-                    
-                    //gfx_FillRectangle(10 + 10*day,230 - (player.value / player.scl),5,(player.value - player.prevvalue)/player.scl);
-                } else {
-                    gfx_SetColor(128);
-                    gfx_FillRectangle(5 + 10*day,160 - (player.prevvalue / player.scl),5,(player.prevvalue - player.value)/5);
-                    //gfx_FillRectangle(10 + 10*day,230 - (player.prevvalue / player.scl),5,(player.prevvalue - player.value)/player.scl);
-                }
-            }*/
+            
             if (player.value >= player.prevvalue) {
                 gfx_SetColor(14);
             } else {
                 gfx_SetColor(128);
             }
             
-            //if line graph is displayed
-            //gfx_Line(10+10*(day - 1),230 - (player.prevvalue / 10),10+10*day,230 - (player.value / 10));
-
-            //gfx_SetColor(255);
             gfx_Line(10+10*(day - 1),160 - (player.prevvalue / player.scl),10+10*day,160 - (player.value / player.scl));
 
             BlaText();
@@ -292,8 +251,6 @@ void viewPortfolio() {
             gfx_PrintStringXY("Day: ",320 - gfx_GetStringWidth("Day: 30  "),20);
             gfx_PrintInt(player.day,1);
 
-            //gfx_PrintStringXY("avg: ",320 - gfx_GetStringWidth("avg:        "),40);
-            //gfx_PrintInt(stocks[4].average,1);
             if (player.day + 1 == 30) {
                 promptEnd = true;
                 canQuit = true;
@@ -484,36 +441,23 @@ void tradeMenu() {
                 for (idx = 0; idx < 5; idx++) {
                     if (stocks[idx].tempshares <= stocks[idx].shares) {
                         canQuit = true;
-                    } else {
-                        canQuit = false;
                     }
                 }
             }
-            
         }
     } while(canQuit != true);
     
     player.buyingpower -= cost;
-    //probably unecessary
-    //player.value = player.buyingpower;
     player.value = 0;
+
     for (idx = 0; idx < 5; idx++) {
-        
-        //avg = price * amount + price * amount / total amount
-        //stocks[idx].average = (stocks[idx].currentprice * stocks[idx].tempshares + stocks[idx].shares) / (stocks[idx].tempshares + stocks[idx].shares);
-        
         if (player.sell == false) {
             player.value += stocks[idx].tempshares*stocks[idx].close;
             stocks[idx].average = (stocks[idx].close * stocks[idx].tempshares + stocks[idx].shares * stocks[idx].average) / (stocks[idx].tempshares + stocks[idx].shares);
             stocks[idx].shares += stocks[idx].tempshares;
-            
         } else {
-            //player.buyingpower += stocks[idx].tempshares*stocks[idx].close;
-            //stocks[idx].average = (stocks[idx].close * stocks[idx].tempshares - stocks[idx].shares * stocks[idx].average) / (stocks[idx].tempshares - stocks[idx].shares);
-            
             //doesnt work well
             stocks[idx].average = (stocks[idx].average * stocks[idx].shares - (stocks[idx].tempshares * stocks[idx].close)) / (stocks[idx].shares - stocks[idx].tempshares);
-            
             stocks[idx].shares -= stocks[idx].tempshares;
         }
         stocks[idx].tempshares = 0;
@@ -549,6 +493,8 @@ void endGame() {
     gfx_PrintInt(player.value - 1000,1);
     gfx_SetTextScale(1,1);
     WhiText();
+
+    //can be optimized to print string
     gfx_PrintStringXY("Best Stock: ",20,80);
     if (best == 0) {
         gfx_PrintStringXY("GME",20 + gfx_GetStringWidth("Best Stock: "),80);
@@ -561,7 +507,7 @@ void endGame() {
     } else if (best == 4) {
         gfx_PrintStringXY("AMC",20 + gfx_GetStringWidth("Best Stock: "),80);
     }
-    //gfx_PrintInt(best,1);
+
     gfx_PrintStringXY("Worst Stock: ",20,100);
     if (worst == 0) {
         gfx_PrintStringXY("GME",20 + gfx_GetStringWidth("Worst Stock: "),100);
@@ -574,10 +520,7 @@ void endGame() {
     } else if (worst == 4) {
         gfx_PrintStringXY("AMC",20 + gfx_GetStringWidth("Worst Stock: "),100);
     }
-    //gfx_PrintInt(worst,1);
     
-    //if user has played before, print high score
-    //gfx_PrintStringXY("You have $1,000 to spend.",160 - gfx_GetStringWidth("You have $1,000 to spend.")/ 2,50);
     gfx_PrintStringXY("Press ENTER to Continue",160 - gfx_GetStringWidth("Press ENTER to Continue") / 2,190);
     gfx_PrintStringXY("Press CLEAR to Quit",160 - gfx_GetStringWidth("Press CLEAR to Quit") / 2,210);
 
@@ -600,7 +543,6 @@ void endGame() {
         delay(200);
         //maybe save stats here
     }
-    
 }
 
 void main(void) {
